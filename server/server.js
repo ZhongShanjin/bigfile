@@ -333,9 +333,10 @@ app.post("/upload_merge", async (req, res) => {
   }
 });
 app.get("/upload_already", async (req, res) => {
-  let { HASH } = req.query;
-  let path = `${uploadDir}/${HASH}`,
-    fileList = [];
+  let { HASH, suffix } = req.query;
+  let path = `${uploadDir}/${HASH}`;
+  let fileList = [];
+  let servicePath = "";
   try {
     fileList = fs.readdirSync(path);
     fileList = fileList.sort((a, b) => {
@@ -348,11 +349,24 @@ app.get("/upload_already", async (req, res) => {
       fileList: fileList,
     });
   } catch (err) {
-    res.send({
-      code: 0,
-      codeText: "",
-      fileList: fileList,
-    });
+    try {
+      fileList = fs.readdirSync(uploadDir);
+      if (fileList.includes(`${HASH}.${suffix}`)) {
+        servicePath = `${uploadDir}/${HASH}.${suffix}`;
+      }
+      res.send({
+        code: 0,
+        codeText: "",
+        fileList: fileList,
+        servicePath: servicePath.replace(__dirname, HOSTNAME),
+      });
+    } catch (err) {
+      res.send({
+        code: 1,
+        codeText: "Error reading directories",
+        fileList: [],
+      });
+    }
   }
 });
 //这是Express的内置中间件函数，用于托管静态文件。这里的 "./" 表示静态文件的根目录是当前目录（也就是运行Node.js应用的目录）。这意味着Express会自动响应来自这个目录及其子目录中静态文件的请求。例如，如果你的项目根目录下有一个名为 index.html 的文件，用户可以通过访问服务器的根URL（如 http://localhost/）来直接访问这个文件。如果请求的是 http://localhost/css/style.css，Express会尝试从项目的 ./css 目录下提供 style.css 文件。

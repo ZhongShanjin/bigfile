@@ -649,6 +649,7 @@ Base64是一种编码方式，可以将二进制数据转换为ASCII字符串。
       data = await instance.get("/upload_already", {
         params: {
           HASH,
+          suffix,
         },
       });
       if (+data.code == 0) {
@@ -717,10 +718,24 @@ Base64是一种编码方式，可以将二进制数据转换为ASCII字符串。
       }
     };
     // 把每一个切片都上传到服务器上
+    let alertShown = false;
+    if (already.includes(`${HASH}.${suffix}`)) {
+      upload_progress_value.style.width = `100%`;
+
+      // 使用setTimeout来延迟执行
+      setTimeout(() => {
+        clear();
+        alert(
+          `恭喜您，文件上传成功，您可以基于 ${data.servicePath} 访问该文件~~`
+        );
+        upload_inp.value = "";
+      }, 300); // 延迟300毫秒
+
+      return;
+    }
     chunks.forEach((chunk) => {
       // 已经上传的无需在上传 实现秒传
       if (already.length > 0 && already.includes(chunk.filename)) {
-        console(already);
         complate();
         return;
       }
@@ -737,8 +752,11 @@ Base64是一种编码方式，可以将二进制数据转换为ASCII字符串。
           return Promise.reject(data.codeText);
         })
         .catch(() => {
-          alert("当前切片上传失败，请您稍后再试~~");
-          clear();
+          if (!alertShown) {
+            alert("当前切片上传失败，请您稍后再试~~");
+            alertShown = true;
+            clear();
+          }
         })
         .finally(() => {
           upload_inp.value = ""; // 清空input的值，即file
